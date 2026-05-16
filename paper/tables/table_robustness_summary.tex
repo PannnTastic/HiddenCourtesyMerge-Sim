@@ -1,0 +1,51 @@
+% Table: Robustness and diagnostic checks
+\begin{table}[htbp]
+\centering
+\caption{Robustness and diagnostic checks supporting the main claims.
+  The benchmark is designed to expose confounds rather than hide them:
+  each check targets a specific alternative explanation for the headline
+  policy ordering or the belief-policy null result.}
+\label{tab:robustness_summary}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.23\textwidth}
+                >{\raggedright\arraybackslash}p{0.34\textwidth}
+                >{\raggedright\arraybackslash}p{0.34\textwidth}}
+\toprule
+\textbf{Threat or alternative explanation} & \textbf{Check} & \textbf{Outcome} \\
+\midrule
+Action table too insensitive to belief
+  & Belief-gain sweep over $g\in\{0.05,0.10,0.185,0.30,0.50\}$
+  & Belief collision remains 15.0\% and reward 55.33 at every gain;
+    oracle improves from 13.7\% to 5.7\% collision (Table~\ref{tab:gain_sweep}). \\
+\addlinespace
+Manual close-call reward weight drives ranking
+  & Replay stored per-step rewards for $w\in\{0.10,0.25,0.50,1.00\}$
+  & Reward ordering is unchanged: POMCP $>$ oracle-heuristic $>$ belief $>$ rule
+    $\gg$ random (Table~\ref{tab:penalty_ablation}). \\
+\addlinespace
+POMCP advantage is only conservative rollout bias
+  & Replace POMCP rollout trigger from $d{<}15$\,m or TTC$<6$\,s to
+    heuristic emergency trigger $d{<}8$\,m or TTC$<3$\,s
+  & Collision remains 5.0\%; reward changes only from 57.36 to 57.41
+    (Table~\ref{tab:pomcp_rollout_ablation}). \\
+\addlinespace
+Diagonal observation likelihood hides correlated features
+  & Held-out full-covariance Gaussian over \{\emph{ard}, \emph{mvs}, \emph{mva}\}
+  & Offline final-step belief accuracy improves from 92.2\% to 97.7\%;
+    closed-loop full-covariance evaluation is identified as the next benchmark
+    variant (Table~\ref{tab:covariance_ablation}). \\
+\addlinespace
+Binary significance depends only on marginal rates
+  & Report paired McNemar discordant counts for collision tests
+  & Key comparisons are supported by asymmetric discordants, e.g.,
+    pomcp vs.\ oracle-heuristic: 5 vs.\ 21 first/second-only collisions
+    (Table~\ref{tab:mcnemar_discordants}). \\
+\addlinespace
+Belief-vs-rule null is overinterpreted
+  & Post-hoc power analysis using pairwise observed collision rates
+  & Achieved power is 19.5\%; $n{\approx}1{,}960$ per policy is required for
+    80\% power at the observed 3.3\,pp gap (Table~\ref{tab:power}). \\
+\bottomrule
+\end{tabular}}
+\end{table}

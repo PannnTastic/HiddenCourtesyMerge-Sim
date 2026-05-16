@@ -1,0 +1,31 @@
+% Section: Conclusion
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced \textbf{HiddenCourtesyMerge-Sim}, a controlled benchmark for
+belief-based planning under hidden driver courtesy in highway merge scenarios.
+The benchmark provides a 3{,}000-episode dataset with ground-truth binary
+latent labels, a calibrated product-of-Gaussians observation model
+(98.3\% held-out step-level accuracy, NLL 0.168, $\lambda{=}0.08$ selected
+by grid search), an abstracted hidden-parameter POMDP interface with Bayesian
+belief update, and a five-policy matched evaluation with paired statistical
+evaluation infrastructure
+(20-test joint Holm--Bonferroni, paired Cohen's $d$, post-hoc power analysis).
+Oracle access to the hidden type significantly reduces collisions
+(10.3\% vs.\ 18.3\%, $p_\text{adj}{=}0.005$, $|h|{=}0.230$) but a Bayesian
+belief policy does not close this gap at $n{=}300$ ($p_\text{adj}{=}0.33$,
+achieved power 19.5\%); a belief-gain sweep localises the bottleneck in
+early-window observation quality, not action-table expressiveness.
+A POMCP solver achieves 5.0\% collision and reward 57.36, significantly
+exceeding all heuristic baselines, including the oracle-heuristic baseline
+($p_\text{adj}{=}0.014$, $|h|{=}0.204$, $d{=}0.221$), indicating within this
+benchmark that UCT planning over the reward function captures
+safety-relevant action sequences not represented by the heuristic action table.
+\textit{The benchmark's primary value is providing the matched experimental
+infrastructure and mechanistic diagnostics---$\lambda$-ablation,
+early-window accuracy, belief-gain sweep, reward sensitivity, rollout
+isolation, covariance ablation, and paired power analysis---needed to clearly
+distinguish what online belief estimation and principled planning each
+contribute to merge safety.}
+An anonymized review repository will be provided during submission; the
+de-anonymized dataset, code, and figures will be released upon acceptance.

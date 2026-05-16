@@ -1,0 +1,30 @@
+% Table: Discordant-pair counts for McNemar collision tests
+% Source: eval_final_v6_cleanobs/policy_episodes.csv and pomcp_300ep_100sims/policy_episodes.csv
+\begin{table}[htbp]
+\centering
+\caption{Discordant-pair counts underlying the paired McNemar collision tests
+  in Table~\ref{tab:sig_pooled}. ``First-only'' means the first-named policy
+  collided while the second did not; ``second-only'' means the reverse.}
+\label{tab:mcnemar_discordants}
+\small
+\begin{tabular}{lrrrrc}
+\toprule
+\textbf{Comparison} & \textbf{First-only} & \textbf{Second-only} &
+\textbf{Both} & \textbf{Neither} & $p_\text{adj}$ \\
+\midrule
+pomcp vs oracle & 5 & 21 & 10 & 264 & 0.014 \\
+pomcp vs belief & 6 & 36 & 9 & 249 & $<0.001$ \\
+pomcp vs rule & 7 & 47 & 8 & 238 & $<0.001$ \\
+oracle vs rule & 12 & 36 & 19 & 233 & 0.005 \\
+oracle vs belief & 15 & 29 & 16 & 240 & 0.150 \\
+belief vs rule & 16 & 26 & 29 & 229 & 0.330 \\
+rule vs random & 4 & 210 & 51 & 35 & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item Counts sum to $n{=}300$ matched episodes for each comparison.
+  Holm--Bonferroni adjusted $p$ values use the same 20-comparison family as
+  Table~\ref{tab:sig_pooled}.
+\end{tablenotes}
+\end{table}

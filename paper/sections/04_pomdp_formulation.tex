@@ -1,0 +1,264 @@
+% Section: Benchmark and Methods  (replaces former sections 4+5+6+7+8)
+\section{Benchmark and Methods}
+\label{sec:benchmark}
+
+\subsection{Simulation Environment and Courtesy Injection}
+We use the \texttt{merge-v0} environment from highway-env
+\citep{leurent_highway_env} (v1.11): a two-lane main road with a single-lane
+on-ramp, capped at 60 policy steps ($\Delta t{=}0.2$\,s, 12\,s total).
+At each episode reset, a ramp vehicle is selected as the merge vehicle and
+assigned a hidden courtesy type $m \in \{\text{cooperative},
+\text{non-cooperative}\}$ sampled with equal probability.
+Six IDM/MOBIL parameters are drawn uniformly from courtesy-specific ranges
+(Table~\ref{tab:courtesy_params}) and injected as instance attributes,
+shadowing class-level defaults without any per-step override or teleportation.
+Cooperative vehicles slow to create gaps; non-cooperative vehicles maintain
+high speed and small headways.
+A 3{,}000-episode dataset (seed 7, 70/15/15 split by episode index) is
+generated using \texttt{belief\_policy} as the ego; this introduces a survivorship bias---high-risk states are under-represented
+relative to a random ego---that does not affect the seed-17 matched policy
+evaluation reported in \S\ref{sec:results}, but researchers training
+learning-based planners or encoders on the released dataset should account
+for this trajectory-distribution bias.
+The dataset confirms that non-cooperative episodes produce higher collision
+rates, more close-call events, and shorter minimum TTC on all five monotone
+risk-ordering checks (Table~\ref{tab:risk_by_courtesy}).
+26.0\% of episodes (778/3{,}000) contain no in-window steps because the merge
+vehicle completes its lane change before $d_t$ enters $(2,40)$\,m; for these
+episodes the belief remains at $b_0$ throughout and the policy effectively
+reduces to the rule baseline.
+Retaining these episodes preserves the ecological distribution of merge
+interactions at the benchmark traffic density rather than conditioning on
+interactions of a specific type.
+
+\subsection{POMDP Specification}
+\label{sec:pomdp}
+The problem is formalised as an abstracted hidden-parameter POMDP interface.
+We write the tuple as
+\[
+  \mathcal{M}{=}(S,A,O,T,Z,R,\gamma,b_0).
+\]
+The compact tuple exposes the merge vehicle, ego vehicle, and binary courtesy
+mode used by the benchmark policies; the full highway-env simulator state
+remains inside the transition kernel.
+The state decomposes into an observable component and a single hidden
+component:
+\[
+  s_t = \bigl(\underbrace{x_e,\,v_e,\,\ell_e,\,x_m,\,v_m,\,\ell_m,\,
+  d_t,\,\Delta v_t}_{\text{observable}},\;
+  \underbrace{m}_{\text{hidden}}\bigr).
+\]
+The observable component comprises the longitudinal position $x_e$\,(m)
+and speed $v_e$\,(m/s) of the ego vehicle, together with its lane index
+$\ell_e$ (fixed to the main road throughout the episode); the longitudinal
+position $x_m$\,(m) and speed $v_m$\,(m/s) of the merge vehicle, together
+with its lane index $\ell_m$ (on-ramp prior to merge, main road thereafter);
+the signed longitudinal gap $d_t{=}x_m{-}x_e$\,(m) (both positions measured
+along the common longitudinal road axis), which is negative when
+the merge vehicle trails the ego; and the relative speed
+$\Delta v_t{=}v_m{-}v_e$\,(m/s), which is positive when the merge vehicle
+is closing.
+The quantities $d_t$ and $\Delta v_t$ are deterministic functions of
+$(x_e,v_e,x_m,v_m)$ but are included explicitly in $s_t$ because the
+observation model and action rules consume them directly.
+The hidden component $m\in\{\text{cooperative},\,\text{non-cooperative}\}$
+is the courtesy type, sampled once at episode start and fixed for the entire
+episode: IDM/MOBIL parameters are injected as instance attributes at reset
+and are not modified thereafter, so $P(m_{t+1}{=}m_t){=}1$ holds by
+construction of the simulator, not as a modelling assumption.
+The transition function factorises as
+$T(s'\!\mid\!s,a) = \delta(m'{=}m)\cdot T_{\!\text{env}}(s'_{\text{obs}}\mid s_{\text{obs}},a)$,
+where $T_{\!\text{env}}$ is the opaque highway-env simulator dynamics and
+$\delta(m'{=}m)$ encodes the static hidden state.
+Surrounding traffic, downstream lane availability, and road geometry are
+represented inside $T_{\!\text{env}}$ but are not enumerated in this compact
+tuple; richer explicit state representations are left for future benchmark
+variants.
+The heuristic policies are memoryless and do not use $\gamma$; the POMCP
+solver uses $\gamma{=}0.98$ (see \S\ref{sec:pomcp_policy}).
+The ego selects from five discrete meta-actions (LANE\_LEFT, IDLE,
+LANE\_RIGHT, FASTER, SLOWER).
+In \texttt{merge-v0}'s single-merge-lane geometry the ego occupies the
+main road throughout, making LANE\_LEFT, LANE\_RIGHT, and FASTER
+infeasible or counter-productive during the merge interaction; all evaluated
+non-random policies restrict to $\{\text{IDLE},\text{SLOWER}\}$.
+The evaluation reward is the highway-env reward minus a close-call penalty,
+\[
+  R_t = r^{\mathrm{env}}_t - 0.25\,
+  \mathbf{1}[\mathrm{TTC}_t<3\mathrm{s}\ \lor\ d_t\in(0,15\mathrm{m})],
+\]
+where $r^{\mathrm{env}}_t \approx v_e/v_{\mathrm{ref}} \in [0,1]$ is the
+highway-env speed reward ($v_{\mathrm{ref}}{=}30$\,m/s).
+The coefficient 0.25 was selected by manual inspection on the training split
+and is not claimed to be optimal.
+Replaying stored per-step rewards under alternate close-call weights confirms
+that the policy reward ordering is stable for $w\in\{0.10,0.25,0.50,1.00\}$
+(Table~\ref{tab:penalty_ablation}), although closed-loop policies were not
+rerun under alternate reward definitions.
+POMCP uses a separate planning reward described below, creating a deliberate
+but disclosed planning--evaluation mismatch.
+The observation space is $O{=}\mathbb{R}^3$; each observation
+$o_t{=}(o_{t,\text{ard}},\,o_{t,\text{mvs}},\,o_{t,\text{mva}})$ is active
+inside the interaction window ($2\,\text{m}{<}d_t{<}40\,\text{m}$) and null
+outside it, in which case the belief is carried forward unchanged.
+The observation likelihood is a product of univariate Gaussians over these
+three features:
+\[
+  Z(o_t \mid m)
+  = \prod_{i \in \{\text{ard},\,\text{mvs},\,\text{mva}\}}
+    \mathcal{N}(o_{t,i};\,\mu_{m,i},\,\sigma_{m,i}^2).
+\]
+The Bayesian belief is updated as
+\begin{align}
+  \tilde{b}_{t+1}(m) &= \eta \cdot Z(o_t \mid m) \cdot b_t(m), \label{eq:bayes}\\
+  b_{t+1} &= (1-\lambda)\,\tilde{b}_{t+1} + \lambda\,b_0, \label{eq:reg}
+\end{align}
+where $\eta$ is the normalisation constant ensuring that $\tilde{b}_{t+1}$ sums
+to one over $m$,
+and $\lambda{=}0.08$ shrinks the posterior toward the uniform prior
+$b_0{=}[0.5,\,0.5]$ to mitigate overconfidence from temporally correlated
+observations.
+The value $\lambda{=}0.08$ was selected by grid search over
+$\{0.00,0.02,0.04,0.08,0.12,0.16,0.20\}$ on the train and validation splits
+(2{,}550 episodes; test split withheld), targeting final-step belief accuracy
+(the metric most relevant to downstream policy quality;
+Table~\ref{tab:lambda_ablation}).
+It achieves 93.8\% final-step accuracy, within $0.1$\,pp of the peak at
+$\lambda{=}0.12$ (93.9\%), while maintaining lower expected calibration
+error ($\text{ECE}{=}0.063$) than all smaller values.
+The heuristic policies are not optimal POMDP solvers; POMCP is an approximate
+online planner evaluated as a planning baseline.
+
+\subsection{Observation Model}
+\label{sec:obs_model}
+The three active features are: \textbf{absolute relative distance}
+(\emph{ard}, m), reflecting gap-acceptance behaviour (class separation
+$|\Delta\mu|/\bar\sigma{=}0.48$); \textbf{merge vehicle speed}
+(\emph{mvs}, m/s), directly tracking the courtesy-injected target speed
+(separation 1.32); and \textbf{merge vehicle acceleration}
+(\emph{mva}, m/s$^2$), capturing sustained cooperative deceleration
+($\mu_\text{coop}{=}-0.938$) vs.\ near-zero non-cooperative mean
+($\mu_\text{nc}{=}-0.045$, separation 0.81).
+Two candidate features were excluded using pre-specified criteria: urgency
+(\emph{urg}) for weak class separation ($|\Delta\mu|/\bar\sigma{<}0.30$;
+observed 0.14), and relative speed (\emph{rs}) for near-perfect collinearity
+with \emph{mvs} (Pearson $r{=}0.991$), which violates the product-of-Gaussians
+independence assumption (Table~\ref{tab:feature_corr}).
+
+Gaussian parameters $(\mu_{m,i},\sigma_{m,i})$ are calibrated from 60
+simulator rollouts per courtesy mode at seed 999, yielding 290 cooperative
+and 1{,}519 non-cooperative in-window steps (5.2:1 imbalance;
+Table~\ref{tab:obs_model_params}).
+The imbalance arises because cooperative vehicles spend fewer steps in the
+interaction window; it inflates the standard error of cooperative parameter
+estimates by approximately $\sqrt{1519/290}{\approx}2.3{\times}$ relative to
+non-cooperative estimates, and is noted as a limitation (\S\ref{sec:discussion}).
+Calibration (seed 999), dataset generation (seed 7), and policy evaluation
+(seed 17) use deliberately disjoint global seeds to prevent cross-contamination
+between observation-model fitting and downstream evaluation.
+Per-feature minimum-$\sigma$ floors ($\sigma_\text{min}\in[0.05,2.0]$\,m
+or m/s; Table~\ref{tab:obs_model_params}) prevent degenerate likelihoods.
+The three-feature model achieves 98.3\% held-out step-level classification
+accuracy relative to a balanced-class Bernoulli baseline
+(NLL $0.168$ vs.\ $\ln 2{=}0.693$, a $4.1{\times}$ reduction;
+ECE $0.063$ on the 3{,}000-episode dataset).
+A feature ablation confirms that removing \emph{ard} reduces final-step
+accuracy from 93.8\% to 87.3\%: despite borderline class separation
+($|\Delta\mu|/\bar\sigma{=}0.48$), \emph{ard} provides an orthogonal
+proximity signal that complements the velocity features \emph{mvs} and
+\emph{mva}, and its removal is non-redundant
+(Table~\ref{tab:obs_feature_ablation}).
+An offline held-out ablation further shows that a full-covariance Gaussian
+over \{\emph{ard}, \emph{mvs}, \emph{mva}\} improves filter metrics relative
+to the canonical diagonal likelihood (Table~\ref{tab:covariance_ablation}):
+$+3.3$\,pp step-level accuracy (82.8\%\,$\to$\,86.1\%) and $+5.5$\,pp
+final-step accuracy (92.2\%\,$\to$\,97.7\%) on 7{,}275 held-out in-window steps.
+The gain is driven primarily by the cooperative class, which exhibits substantial
+within-class correlations (\emph{ard}--\emph{mvs}: $r{=}0.60$;
+\emph{mvs}--\emph{mva}: $r{=}0.57$) that the diagonal model ignores;
+the non-cooperative class shows near-zero within-class correlations.
+We retain the diagonal model for the primary closed-loop evaluation to keep
+the released policy artifacts fixed, but the full-covariance result identifies
+a concrete modeling improvement for future benchmark users.
+
+\subsection{Policy Baselines}
+\label{sec:baselines}
+\paragraph{Heuristic policies.}
+Four heuristic policies share a V-shaped caution rule mapping a belief
+vector $b_t$ to an action in $\{\text{IDLE},\text{SLOWER}\}$.
+The SLOWER probability in the moderate-TTC regime is
+$p_\text{SLOWER}{=}0.735{+}0.185|2b_\text{coop}{-}1|$; in the low-urgency
+regime it is $0.205{+}0.125|2b_\text{coop}{-}1|$
+(all coefficients were determined by manual search on the training split,
+targeting a balance between collision avoidance and throughput under the
+V-shaped caution structure; we did not perform further automated optimisation).
+Emergency overrides (TTC\,$<$\,3\,s or gap\,$<$\,8\,m) trigger SLOWER with
+probability 0.98.
+The four policies differ only in the belief passed to this function
+(Table~\ref{tab:policy_defs}): \texttt{random\_policy} selects uniformly
+from all five actions (unconditional lower bound); \texttt{rule\_policy}
+fixes $b{=}[0.5,0.5]$ (isolates the value of belief estimation);
+\texttt{belief\_policy} maintains a Bayesian belief via
+\eqref{eq:bayes}--\eqref{eq:reg} (primary interest); and
+\texttt{oracle\_policy} passes a one-hot belief at the true courtesy type
+(upper bound for this action table only---not an optimal POMDP policy).
+
+\paragraph{POMCP policy.}
+\label{sec:pomcp_policy}
+As a planning-based solver, we implement POMCP \citep{silver2010pomcp} with
+UCT search over the binary-mode hidden-parameter POMDP.
+Because $m$ is fixed per episode, each simulation samples a mode from the
+external Bayesian belief and treats it as known for the full trajectory;
+no particle propagation over $m$ is needed since $m$ is constant within an
+episode by construction.
+The generative model uses mean IDM parameters per courtesy type to propagate
+$(d_t, v_{e,t}, v_{m,t})$ analytically.
+The rollout heuristic selects SLOWER when $d{<}15$\,m or TTC\,$<$\,6\,s
+and IDLE otherwise---a more conservative trigger than the heuristic
+emergency override (TTC\,$<$\,3\,s or gap\,$<$\,8\,m).
+Table~\ref{tab:pomcp_rollout_ablation} reports a rollout-isolation run using
+the heuristic emergency trigger.
+The planning reward is $v_e/30 - 100\,\mathbf{1}[d{<}1.5\,\text{m}]
+- 1.0\,\mathbf{1}[\text{TTC}{<}3\,\text{s}]$; this uses a narrower
+collision zone ($d{<}1.5$\,m) and differs from the environment evaluation
+reward, introducing a planning--evaluation reward mismatch.
+See limitations (\S\ref{sec:discussion}) for discussion of the remaining
+planning--evaluation mismatch.
+At each decision step, 100 UCT simulations run with horizon 10 steps
+(2\,s) and $\gamma{=}0.98$; across timesteps the subtree rooted at the
+executed action is retained with its visit counts, and all remaining branches
+are discarded.
+POMCP optimises discounted return ($\gamma{=}0.98$) while evaluation uses
+undiscounted episode mean reward; this is a further acknowledged
+planning--evaluation mismatch beyond the reward-function discrepancy noted above.
+The belief is maintained by the same external Bayesian filter as
+\texttt{belief\_policy}, ensuring a fair comparison.
+
+\subsection{Experimental Setup}
+\label{sec:experiments}
+All five policies are evaluated over $n{=}300$ episodes at global seed 17.
+Each episode index maps to a fixed environment seed, hidden courtesy type,
+traffic density, and observation noise shared by all policies (matched
+design); action sampling uses separate per-policy RNG offsets to avoid
+cross-contamination.
+We report collision rate, mean reward, mean minimum TTC, and close-call rate
+with bootstrap 95\% CIs (10{,}000 resamples) for binary metrics and
+normal-approximation CIs for continuous metrics.
+Paired binary comparisons use McNemar's test \citep{mcnemar1947note};
+paired continuous comparisons use the paired $t$-test; Holm--Bonferroni
+correction \citep{holm1979simple} is applied jointly across all
+$\binom{5}{2}{\times}2{=}20$ pairwise comparisons and metrics in a single
+family; Cohen's $d$ for continuous metrics is computed as
+$\bar\delta/s_\delta$, the ratio of the mean to the standard deviation of
+paired differences \citep{cohen1988statistical}, and Cohen's $h$ for binary
+metrics uses the arcsine transformation.
+
+\input{tables/table_courtesy_params}
+\input{tables/table_risk_by_courtesy}
+\input{tables/table_policy_definitions}
+\input{tables/table_observation_params}
+\input{tables/table_observation_validation}
+\input{tables/table_feature_correlation}
+\input{tables/table_observation_feature_ablation}
+\input{tables/table_covariance_ablation}
+\input{tables/table_lambda_ablation}

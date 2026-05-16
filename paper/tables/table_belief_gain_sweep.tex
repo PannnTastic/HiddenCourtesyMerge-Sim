@@ -1,0 +1,37 @@
+% Table: Belief-gain sweep
+% Source: belief_gain_sweep/belief_gain_sweep_summary.csv
+\begin{table}[htbp]
+\centering
+\caption{Belief-gain sweep: collision rate (\%) and mean reward vs.\ the
+  belief-gain coefficient $g$ across $n{=}300$ matched episodes.
+  The gain controls the V-shaped action slope
+  ($p_\text{SLOWER}{=}0.735+g\cdot|2b_\text{coop}{-}1|$).
+  The canonical gain (bold) is the setting used throughout the evaluation.
+  Rule baseline is 18.3\% collision and 54.90 reward (constant by construction).}
+\label{tab:gain_sweep}
+\small
+\begin{tabular}{ccccc}
+\toprule
+\multirow{2}{*}{\textbf{Gain $g$}} &
+\multicolumn{2}{c}{\textbf{Oracle}} &
+\multicolumn{2}{c}{\textbf{Belief}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+& Collision (\%) & Mean reward & Collision (\%) & Mean reward \\
+\midrule
+0.05  & 13.7 & 55.51 & 15.0 & 55.33 \\
+0.10  & 11.7 & 55.96 & 15.0 & 55.33 \\
+\textbf{0.185} & \textbf{10.3} & \textbf{56.46} & \textbf{15.0} & \textbf{55.33} \\
+0.30  &  8.7 & 56.83 & 15.0 & 55.33 \\
+0.50  &  5.7 & 57.27 & 15.0 & 55.33 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item Belief vs.\ rule: $|h|{=}0.090$, $p_\text{adj}{=}1.0$ at every tested
+  gain (McNemar, Holm--Bonferroni corrected). Oracle vs.\ rule at canonical
+  gain: $|h|{=}0.230$, $p_\text{adj}{=}0.013$ after correction over the
+  five-gain sweep family; the same raw test gives $p_\text{adj}{=}0.005$
+  under the twenty-comparison pooled policy-evaluation family in
+  Table~\ref{tab:sig_pooled}.
+\end{tablenotes}
+\end{table}

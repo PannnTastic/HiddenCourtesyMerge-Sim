@@ -1,0 +1,23 @@
+% Table: Candidate observation feature Pearson correlations
+% Source: review_analyses_cleanobs/feature_correlation_pearson.csv
+\begin{table}[htbp]
+\centering
+\caption{Pearson correlation matrix for candidate observation features on
+  in-window dataset steps. The near-identity correlation between relative
+  speed and merge speed ($r{=}0.991$) motivated dropping \emph{rs}. The
+  largest residual correlation among the final features is \emph{mvs}--\emph{mva}
+  ($r{=}0.399$); \emph{ard}--\emph{mvs} is modest ($r{=}0.220$).}
+\label{tab:feature_corr}
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+ & \textbf{urg} & \textbf{ard} & \textbf{rs} & \textbf{mvs} & \textbf{mva} \\
+\midrule
+\textbf{urg} & 1.000 & -0.092 & -0.035 & -0.034 & -0.012 \\
+\textbf{ard} & -0.092 & 1.000 & 0.211 & 0.220 & 0.001 \\
+\textbf{rs} & -0.035 & 0.211 & 1.000 & \textbf{0.991} & 0.405 \\
+\textbf{mvs} & -0.034 & 0.220 & \textbf{0.991} & 1.000 & 0.399 \\
+\textbf{mva} & -0.012 & 0.001 & 0.405 & 0.399 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}

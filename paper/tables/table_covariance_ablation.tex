@@ -1,0 +1,28 @@
+% Table: Diagonal vs full-covariance observation likelihood
+% Source: offline analysis on HiddenCourtesyMerge-Sim-cleanobs/steps_with_belief.csv
+\begin{table}[htbp]
+\centering
+\caption{Offline covariance-structure ablation for the three active
+  observation features on held-out test-split in-window steps.
+  The canonical policy evaluation uses the diagonal product-of-Gaussians
+  likelihood; a full-covariance Gaussian fitted on training steps improves
+  offline filter accuracy, indicating that residual feature correlations are
+  practically relevant even after dropping \emph{rs}.}
+\label{tab:covariance_ablation}
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Likelihood} & \textbf{Step acc.} & \textbf{Final acc.} &
+\textbf{NLL} & \textbf{Brier} & \textbf{ECE} \\
+\midrule
+Diagonal Gaussian & 82.8\% & 92.2\% & 0.428 & 0.131 & 0.068 \\
+Full covariance Gaussian & 86.1\% & 97.7\% & 0.296 & 0.093 & 0.053 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item Values use 7{,}275 held-out in-window steps from 346 test episodes.
+  Full-covariance policy rollouts were not rerun; Table~\ref{tab:policy_summary}
+  therefore remains the canonical closed-loop result.
+\end{tablenotes}
+\end{table}

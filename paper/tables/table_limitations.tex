@@ -1,0 +1,83 @@
+% Table 12: Limitations summary
+\begin{table}[htbp]
+\centering
+\caption{Limitations of the HiddenCourtesyMerge-Sim benchmark.}
+\label{tab:limitations}
+\small
+\begin{tabular}{p{3.4cm}p{9.0cm}}
+\toprule
+\textbf{Limitation} & \textbf{Detail} \\
+\midrule
+Simulation-only scope
+  & All results are from highway-env \texttt{merge-v0}; no real-world or
+    human-driver validation is performed or claimed. \\
+Synthetic courtesy
+  & Courtesy types are operationalised via IDM/MOBIL parameter ranges; they
+    do not model empirical human psychology or empirical driving data. \\
+Binary courtesy only
+  & A two-class latent variable is a controlled simplification; real driver
+    behaviour is continuous and multi-dimensional. \\
+Heuristic action table
+  & The evaluated policies use a hand-designed V-shaped caution heuristic,
+    not a value-optimal POMDP policy. The oracle upper bound is for this
+    table only. \\
+Two-action restriction
+  & The heuristic policies restrict actions to \texttt{IDLE} and
+    \texttt{SLOWER}; \texttt{FASTER} and lateral actions remain in the
+    environment action space but are not used by the evaluated non-random
+    policies. \\
+Reward penalty weight
+  & The close-call coefficient 0.25 was chosen by manual calibration to
+    penalise near-conflict timesteps. Replay-based sensitivity over
+    $w\in\{0.10,0.25,0.50,1.00\}$ preserves the policy reward ordering
+    (Table~\ref{tab:penalty_ablation}), but closed-loop behaviour under
+    alternative rewards was not rerun. \\
+Static courtesy
+  & Courtesy is sampled once per episode and held fixed through IDM/MOBIL
+    parameters. This is appropriate for the controlled benchmark but does not
+    model drivers whose style changes mid-encounter. \\
+QMDP excluded
+  & A QMDP approximation was implemented (16-state tabular Q-learning) but
+    excluded from the primary evaluation due to insufficient Q-table coverage
+    ($\ge$50\% of states unvisited with $n{=}50$ training episodes). \\
+Belief vs.\ rule underpowered
+  & The belief policy does not significantly outperform the rule baseline
+    at $n{=}300$; $\approx$1{,}960 episodes would be needed for 80\% power. \\
+Calibration imbalance
+  & The observation model was calibrated on 290 cooperative and 1{,}519
+    non-cooperative in-window steps (5.2:1 ratio). Cooperative Gaussian
+    estimates carry higher uncertainty. \\
+Non-interaction episodes
+  & 778 of 3{,}000 episodes (26\%) contain no merge interaction window;
+    the merge vehicle never entered the 2--40\,m zone and no belief update
+    occurred in those episodes. \\
+Weak discriminators
+  & Urgency (1/TTC) has a separation score of 0.14 (weak) and was dropped
+    from the final model; absolute relative distance is borderline (0.48).
+    The final filter relies primarily on merge vehicle speed (\emph{mvs},
+    score 1.32) and merge vehicle acceleration (\emph{mva}, score 0.81). \\
+Sequential episode split
+  & Train/validation/test splits are assigned by episode index (70/15/15)
+    rather than by stratified shuffle.
+    If the data-generating process drifts over the 3{,}000-episode run
+    (e.g.\ due to highway-env RNG non-stationarity), later splits may have
+    a systematically different state distribution than earlier ones. \\
+Data-generating policy
+  & The 3{,}000-episode dataset was generated with the \texttt{belief\_policy}
+    as ego driver.
+    The calibration may underrepresent state regions avoided by
+    \texttt{belief\_policy}; robustness to alternative generating policies
+    (e.g.\ constant-speed or rule-based ego) has not been verified and remains
+    an open question. \\
+Belief regularisation
+  & The canonical $\lambda{=}0.08$ setting is close to the best final-step
+    accuracy but is not optimal for NLL or ECE in Table~\ref{tab:lambda_ablation}.
+    Sensitivity of closed-loop policy outcomes to changing $\lambda$ remains
+    untested. \\
+Short horizon
+  & Episodes are capped at 60 steps ($\Delta t{=}0.2$\,s each, i.e., 12\,s).
+    The brief interaction window limits the number of belief updates available
+    before the episode ends. \\
+\bottomrule
+\end{tabular}
+\end{table}

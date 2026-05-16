@@ -1,0 +1,146 @@
+{
+  "cooperative": {
+    "urg_mu": 0.4782877125301455,
+    "urg_sigma": 0.36569761027411946,
+    "ard_mu": 27.497485637876668,
+    "ard_sigma": 9.018610824131969,
+    "rs_mu": -10.426596569928435,
+    "rs_sigma": 3.88458242662415,
+    "mvs_mu": 9.573426229960884,
+    "mvs_sigma": 3.8846007271348943,
+    "mva_mu": -0.9377771215906234,
+    "mva_sigma": 1.695313651461374,
+    "_n_urg": 290,
+    "_n_ard": 290,
+    "_n_rs": 290,
+    "_n_mvs": 290,
+    "_n_mva": 290
+  },
+  "non_cooperative": {
+    "urg_mu": 0.42849263803471926,
+    "urg_sigma": 0.3589784994289462,
+    "ard_mu": 22.758673561605075,
+    "ard_sigma": 10.569510925134658,
+    "rs_mu": -6.773461491923762,
+    "rs_sigma": 1.6878295116369666,
+    "mvs_mu": 13.236528109005159,
+    "mvs_sigma": 1.681506280551817,
+    "mva_mu": -0.0449282307488082,
+    "mva_sigma": 0.5,
+    "_n_urg": 1519,
+    "_n_ard": 1519,
+    "_n_rs": 1519,
+    "_n_mvs": 1519,
+    "_n_mva": 1519
+  },
+  "_validation": {
+    "binary_belief_accuracy": 0.9834162520729685,
+    "brier_score": 0.0549601120640683,
+    "mean_nll": 0.1677215552547283,
+    "uniform_nll": 0.6931471805599453,
+    "ece": 0.09236882031799763,
+    "reliability_bins": [
+      {
+        "lo": 0.0,
+        "hi": 0.1,
+        "confidence": null,
+        "accuracy": null,
+        "count": 0
+      },
+      {
+        "lo": 0.1,
+        "hi": 0.2,
+        "confidence": null,
+        "accuracy": null,
+        "count": 0
+      },
+      {
+        "lo": 0.2,
+        "hi": 0.30000000000000004,
+        "confidence": null,
+        "accuracy": null,
+        "count": 0
+      },
+      {
+        "lo": 0.30000000000000004,
+        "hi": 0.4,
+        "confidence": null,
+        "accuracy": null,
+        "count": 0
+      },
+      {
+        "lo": 0.4,
+        "hi": 0.5,
+        "confidence": null,
+        "accuracy": null,
+        "count": 0
+      },
+      {
+        "lo": 0.5,
+        "hi": 0.6000000000000001,
+        "confidence": 0.5392465950772111,
+        "accuracy": 0.6851851851851852,
+        "count": 54
+      },
+      {
+        "lo": 0.6000000000000001,
+        "hi": 0.7000000000000001,
+        "confidence": 0.64815320596468,
+        "accuracy": 0.9361702127659575,
+        "count": 47
+      },
+      {
+        "lo": 0.7000000000000001,
+        "hi": 0.8,
+        "confidence": 0.7584707525991656,
+        "accuracy": 0.992,
+        "count": 125
+      },
+      {
+        "lo": 0.8,
+        "hi": 0.9,
+        "confidence": 0.8641348592027727,
+        "accuracy": 0.9965986394557823,
+        "count": 588
+      },
+      {
+        "lo": 0.9,
+        "hi": 1.0,
+        "confidence": 0.9541730109991025,
+        "accuracy": 0.992964824120603,
+        "count": 995
+      }
+    ],
+    "n_validation_steps": 1809,
+    "feature_separation": {
+      "ard": 0.4838454791051125,
+      "mvs": 1.316216836645643,
+      "mva": 0.8134135094978018
+    }
+  },
+  "_meta": {
+    "episodes_per_mode": 60,
+    "seed": 999,
+    "traffic_density": 1.0,
+    "class_names": [
+      "cooperative",
+      "non_cooperative"
+    ],
+    "features": [
+      "ard",
+      "mvs",
+      "mva"
+    ],
+    "dropped_features": {
+      "urg": "weak separation and worsened calibration in ablation",
+      "rs": "near-duplicate of mvs in the final dataset (Pearson r\u22480.991)"
+    },
+    "interaction_window_relative_distance_m": {
+      "min": 2.0,
+      "max": 40.0,
+      "direction": "merge_vehicle_ahead_only"
+    },
+    "highway_env_version": "1.11",
+    "timestamp_utc": "2026-05-14T14:04:08.670891+00:00"
+  }
+}

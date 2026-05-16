@@ -1,0 +1,41 @@
+% Section: Related Work
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Hidden Driver Intent and POMDP Planning}
+Planning under partial observability is theoretically well established
+\citep{kaelbling1998planning,kochenderfer2022algorithms}.
+Sunberg and Kochenderfer \citep{sunberg2020internalstates} model hidden
+driver aggressiveness as a latent variable and show safety benefits from
+belief-based planning, while Kruse et al.\ \citep{kruse2022uncertainty}
+plan under learned uncertainty over merge behaviour.
+Li et al.\ \citep{li2021interactionaware} condition on inferred intent using
+real traffic data, and Wang et al.\ \citep{wang2021uncovering} extract latent
+states from naturalistic on-ramp trajectories.
+None of these works provides matched counterfactual evaluation where all
+policies share identical episode seeds with ground-truth courtesy labels.
+
+\subsection{Merge Negotiation and Simulation Environments}
+Reinforcement learning has been widely applied to on-ramp merging
+\citep{chen2021deep,liu2022autonomous}, and social-attention approaches
+\citep{leurent2019social} demonstrate interaction-aware representations in
+highway-env without an explicit belief state.
+The IDM \citep{treiber2000congested} and MOBIL \citep{kesting2007mobil}
+models parameterise longitudinal and lateral driving behaviour through
+interpretable quantities, making them well-suited for controlled courtesy
+injection.
+Highway-env \citep{leurent_highway_env} provides the lightweight simulator
+used here; SUMO \citep{lopez2018microscopic} and naturalistic datasets such
+as highD \citep{krajewski2018highd} offer richer settings but do not supply
+verified latent type labels.
+
+\subsection{Research Gap}
+The key unmet need is a benchmark combining (i)~ground-truth binary courtesy
+labels implemented via clean parameter injection, (ii)~a matched experimental
+design in which every policy faces the same episode sequence, and
+(iii)~calibrated belief estimation with rigorous paired hypothesis tests and
+power analysis.
+Naturalistic datasets satisfy (i) only partially and cannot satisfy (ii) or
+(iii); prior POMDP simulation work satisfies (ii) and (iii) only informally.
+HiddenCourtesyMerge-Sim is designed to satisfy all three simultaneously,
+enabling the matched counterfactual evaluation left open by prior work.

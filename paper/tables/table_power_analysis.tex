@@ -1,0 +1,32 @@
+% Table 11: Power analysis
+% Source: review_analyses_cleanobs/corrected_power_analysis.csv
+\begin{table}[htbp]
+\centering
+\caption{Post-hoc power analysis for collision-rate comparisons
+  (two-sided pairwise Cohen's $h$, $\alpha{=}0.05$).
+  The achieved $n{=}300$ is adequate for the oracle vs.\ rule gap (8.0\,pp)
+  but insufficient for the smaller belief vs.\ rule gap ($\approx$3.3\,pp).}
+\label{tab:power}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Comparison} & \textbf{Collision rates} & \textbf{$|h|$} &
+\textbf{Power @ $n{=}300$} & \textbf{$n$ for 80\%} & \textbf{$n$ for 90\%} \\
+\midrule
+oracle vs random & 10.3\% vs.\ 87.0\% & 1.749 & $>$99.9\% & 6 & 7 \\
+random vs rule & 87.0\% vs.\ 18.3\% & 1.519 & $>$99.9\% & 7 & 10 \\
+oracle vs rule & 10.3\% vs.\ 18.3\% & 0.230 & 80.6\% & 296 & 396 \\
+oracle vs belief & 10.3\% vs.\ 15.0\% & 0.141 & 40.7\% & 792 & 1{,}060 \\
+belief vs rule & 15.0\% vs.\ 18.3\% & 0.090 & 19.5\% & 1{,}958 & 2{,}621 \\
+\bottomrule
+\end{tabular}}
+\begin{tablenotes}
+\small
+\item Required $n$ is per policy. Estimates use each pair's observed
+  collision rates and Cohen's $h$; no pooled collision rate across unrelated
+  policies is used. These are approximate marginal-rate planning estimates;
+  the paired McNemar tests themselves use the matched discordant counts in
+  Table~\ref{tab:mcnemar_discordants}.
+\end{tablenotes}
+\end{table}

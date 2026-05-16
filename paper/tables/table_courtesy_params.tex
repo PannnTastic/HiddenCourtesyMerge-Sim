@@ -1,0 +1,23 @@
+% Table 1: IDM/MOBIL courtesy parameter ranges
+% Source: _COURTESY_PARAMS in generate_hidden_courtesy_merge_dataset.py
+\begin{table}[htbp]
+\centering
+\caption{IDM/MOBIL parameter ranges per courtesy type.
+  Each parameter is sampled uniformly from the given interval once at episode
+  start and injected as an instance attribute of the merge vehicle.
+  No per-step override is performed.}
+\label{tab:courtesy_params}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Parameter} & \textbf{Cooperative} & \textbf{Non-cooperative} \\
+\midrule
+Target speed (m/s) & $[24.0,\ 28.0]$ & $[10.0,\ 16.0]$ \\
+DISTANCE\_WANTED (m) & $[5.0,\ 9.0]$ & $[1.5,\ 4.0]$ \\
+TIME\_WANTED (s) & $[1.4,\ 2.2]$ & $[0.5,\ 1.0]$ \\
+POLITENESS & $[0.35,\ 0.65]$ & $[0.0,\ 0.2]$ \\
+COMFORT\_ACC\_MAX (m/s$^2$) & $[1.8,\ 2.8]$ & $[3.0,\ 5.5]$ \\
+COMFORT\_ACC\_MIN (m/s$^2$) & $[-3.0,\ -1.8]$ & $[-5.5,\ -3.0]$ \\
+\bottomrule
+\end{tabular}
+\end{table}

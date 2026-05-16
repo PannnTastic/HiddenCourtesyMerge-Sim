@@ -1,0 +1,36 @@
+% Table 9: By-courtesy subgroup significance tests
+% Source: eval_final_v6_cleanobs/policy_summary.json significance_tests_by_courtesy
+\begin{table}[htbp]
+\centering
+\caption{Subgroup significance tests stratified by hidden courtesy
+  ($n{=}150$ pairs per subgroup).
+  Holm--Bonferroni correction applied \emph{within} each subgroup over
+  4 tests (oracle vs.\ rule and belief vs.\ rule $\times$ 2 metrics);
+  this is a separate, smaller family from the main 20-test analysis and
+  should be interpreted as exploratory.
+  The oracle reward advantage is significant only in the non-cooperative
+  subgroup, consistent with hidden courtesy being most actionable
+  when the merge vehicle is assertive.}
+\label{tab:sig_by_courtesy}
+\small
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Subgroup} & \textbf{Comparison} & \textbf{Metric} & $p_\text{adj}$ & \textbf{Effect} & \textbf{Sig.} \\
+\midrule
+Non-coop & oracle vs rule & Reward & 0.0348 & $d=0.253$ & \textbf{Yes} \\
+Non-coop & oracle vs rule & Collision & 0.4983 & $h=-0.222$ & No \\
+Non-coop & belief vs rule & Reward & 0.4058 & $d=0.185$ & No \\
+Non-coop & belief vs rule & Collision & 0.6370 & $h=-0.185$ & No \\
+\addlinespace
+Coop & oracle vs rule & Reward & 0.0907 & $d=0.222$ & No \\
+Coop & oracle vs rule & Collision & 0.1682 & $h=-0.253$ & No \\
+Coop & belief vs rule & Reward & 1.0000 & $d=-0.009$ & No \\
+Coop & belief vs rule & Collision & 1.0000 & $h=+0.019$ & No \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item Signed $h$: positive means the first-named policy has a higher binary
+  event rate for that metric; negative means it has a lower rate.
+\end{tablenotes}
+\end{table}

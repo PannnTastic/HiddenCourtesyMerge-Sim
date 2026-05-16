@@ -1,0 +1,44 @@
+% Table: Pooled significance tests (20-test joint Holm-Bonferroni)
+% Family: all C(5,2)x2 = 20 pairwise comparisons applied jointly
+\begin{table}[htbp]
+\centering
+\caption{Pooled paired hypothesis tests ($n{=}300$ pairs).
+  Holm--Bonferroni correction applied jointly across all
+  $\binom{5}{2}{\times}2{=}20$ comparisons.
+  McNemar test for collision (binary); paired $t$-test for reward.
+  Cohen's $d$ uses paired-difference SD; Cohen's $h$ uses arcsine transform;
+  McNemar discordant counts are reported in Table~\ref{tab:mcnemar_discordants}.}
+\label{tab:sig_pooled}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Comparison} & \textbf{Metric} & $p_\text{raw}$ & $p_\text{adj}$ & \textbf{Effect size} & \textbf{Sig.} \\
+\midrule
+\multicolumn{6}{l}{\textit{POMCP vs.\ heuristic baselines}} \\
+pomcp vs oracle & Collision & 0.0033 & 0.014  & $|h|{=}0.204$ & \textbf{Yes} \\
+pomcp vs oracle & Reward    & 0.0002 & 0.0011 & $d{=}0.221$   & \textbf{Yes} \\
+pomcp vs belief & Collision & $<$0.001 & $<$0.001 & $|h|{=}0.344$ & \textbf{Yes} \\
+pomcp vs belief & Reward    & $<$0.001 & $<$0.001 & $d{=}0.316$   & \textbf{Yes} \\
+pomcp vs rule   & Collision & $<$0.001 & $<$0.001 & $|h|{=}0.434$ & \textbf{Yes} \\
+pomcp vs rule   & Reward    & $<$0.001 & $<$0.001 & $d{=}0.362$   & \textbf{Yes} \\
+\addlinespace
+\multicolumn{6}{l}{\textit{Oracle, belief, and rule comparisons}} \\
+oracle vs rule  & Collision & 0.0009 & 0.005  & $|h|{=}0.230$ & \textbf{Yes} \\
+oracle vs rule  & Reward    & 0.0001 & 0.00056& $d{=}0.233$   & \textbf{Yes} \\
+oracle vs belief & Collision & 0.0500 & 0.150  & $|h|{=}0.141$ & No \\
+oracle vs belief & Reward   & 0.0027 & 0.014  & $d{=}0.175$   & \textbf{Yes} \\
+belief vs rule  & Collision & 0.1649 & 0.330  & $|h|{=}0.090$ & No \\
+belief vs rule  & Reward    & 0.2354 & 0.330  & $d{=}0.069$   & No \\
+\addlinespace
+\multicolumn{6}{l}{\textit{Random policy (unconditional lower bound)}} \\
+rule vs random  & Collision & $<$0.001 & $<$0.001 & $|h|{=}1.519$ & \textbf{Yes} \\
+rule vs random  & Reward    & $<$0.001 & $<$0.001 & $d{=}1.370$   & \textbf{Yes} \\
+\bottomrule
+\end{tabular}}
+\begin{tablenotes}
+\small
+\item Remaining six comparisons (pomcp, oracle, belief, belief vs random)
+  all achieve $p_\text{adj}{<}0.001$ and are omitted for brevity.
+\end{tablenotes}
+\end{table}

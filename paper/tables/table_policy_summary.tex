@@ -1,0 +1,58 @@
+% Table 7: Policy summary with 95% CI
+% Source: eval_final_v6_cleanobs/policy_summary.csv
+\begin{table}[htbp]
+\centering
+\caption{Policy evaluation results over $n{=}300$ matched episodes per policy.
+  95\% CIs use bootstrap for binary metrics and normal approximation for
+  continuous metrics.
+  Collision rate ordering (lower is better):
+  pomcp $<$ oracle $<$ belief $<$ rule $\ll$ random.
+  Reward ordering (higher is better):
+  pomcp $>$ oracle $>$ belief $>$ rule $\gg$ random.
+  POMCP uses the same external Bayesian belief as \texttt{belief\_policy};
+  100 UCT simulations per step.}
+\label{tab:policy_summary}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Policy}
+  & \textbf{Collision [\%]}
+  & \textbf{Success [\%]}
+  & \textbf{Mean Reward}
+  & \textbf{Mean min TTC [s]}
+  & \textbf{Close-call [\%]} \\
+\midrule
+pomcp\_policy
+  & \textbf{5.0} [2.7,\;7.7]
+  & \textbf{95.0} [92.3,\;97.3]
+  & \textbf{57.36} [57.09,\;57.63]
+  & 3.14 [2.61,\;3.67]
+  & 11.7 \\
+oracle\_policy
+  & 10.3 [7.0,\;14.0]
+  & 89.7 [86.0,\;93.0]
+  & 56.46 [55.97,\;56.95]
+  & 3.03 [2.66,\;3.39]
+  & 12.0 \\
+belief\_policy
+  & 15.0 [11.0,\;19.0]
+  & 85.0 [81.0,\;89.0]
+  & 55.33 [54.59,\;56.07]
+  & 2.95 [2.60,\;3.30]
+  & 12.1 \\
+rule\_policy
+  & 18.3 [14.3,\;23.0]
+  & 81.7 [77.0,\;85.7]
+  & 54.90 [54.12,\;55.68]
+  & 3.02 [2.66,\;3.38]
+  & 11.9 \\
+random\_policy
+  & 87.0 [83.0,\;91.0]
+  & 13.0 [\phantom{0}9.0,\;17.0]
+  & 36.71 [35.31,\;38.10]
+  & 1.88 [1.64,\;2.11]
+  & 20.7 \\
+\bottomrule
+\end{tabular}}
+\end{table}

@@ -1,0 +1,58 @@
+# Local machine state
+.claude/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Python environments and package caches
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Large local installers and ad-hoc prompt/review files
+*.exe
+prompt.txt
+*.docx
+2604.23435v1.pdf
+*_backup.json
+qmdp_qtable.json
+
+# LaTeX build products
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.fls
+paper/*.fdb_latexmk
+paper/main.pdf
+
+# Legacy split-section drafts not included by paper/main.tex
+paper/sections/05_simulation_benchmark.tex
+paper/sections/06_observation_model.tex
+paper/sections/07_policy_baselines.tex
+paper/sections/08_experiments.tex
+paper/sections/11_limitations.tex
+
+# Generated experiment outputs.
+# Canonical paper tables/figures are committed under paper/.
+eval_*/
+pilot_*/
+policy_eval_*/
+pomcp_*/
+!pomcp_policy.py
+HiddenCourtesyMerge-Sim*/
+belief_gain_sweep/
+merge_selection_check*/
+paper_figures*/
+review_analyses*/
+sanity_300/
+where_when_cleanobs/
+gifs/
+
+# Local exploratory notes
+PROJECT_STATUS.md
+PROMPT_REVIEW.md
+RESEARCH_PLAN.md

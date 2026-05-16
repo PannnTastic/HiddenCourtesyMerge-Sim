@@ -1,0 +1,22 @@
+% Table: POMCP rollout isolation
+% Source: pomcp_300ep_100sims and pomcp_heuristic_rollout_300ep
+\begin{table}[htbp]
+\centering
+\caption{POMCP rollout isolation over the same $n{=}300$ matched episodes.
+  The primary POMCP run uses a conservative rollout trigger
+  ($d{<}15$\,m or TTC\,$<$\,6\,s). The isolation run replaces this with the
+  heuristic emergency trigger ($d{<}8$\,m or TTC\,$<$\,3\,s). Comparable
+  performance indicates that POMCP's headline result is not explained solely
+  by rollout conservatism.}
+\label{tab:pomcp_rollout_ablation}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Rollout trigger} & \textbf{Collision} & \textbf{Reward} &
+\textbf{Min TTC} & \textbf{Close-call rate} \\
+\midrule
+Conservative ($d{<}15$, TTC$<6$) & 5.0\% & 57.36 & 3.14 & 11.7\% \\
+Emergency ($d{<}8$, TTC$<3$)     & 5.0\% & 57.41 & 3.15 & 11.6\% \\
+\bottomrule
+\end{tabular}
+\end{table}

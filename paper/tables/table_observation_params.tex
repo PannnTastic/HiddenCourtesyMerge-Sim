@@ -1,0 +1,35 @@
+% Table 4: Observation model parameters
+% Source: observation_model.json (_meta.features = [ard, mvs, mva])
+\begin{table}[htbp]
+\centering
+\caption{Calibrated Gaussian observation model parameters for the three active
+  features, plus feature separation score $|\Delta\mu|/\bar{\sigma}$.
+  Calibration used 60 episodes per class (290 cooperative and 1{,}519
+  non-cooperative in-window steps at seed 999).
+  Urgency (\emph{urg}) was dropped (sep.\ $=0.14$; weak discriminator);
+  relative speed (\emph{rs}) was dropped (Pearson $r{=}0.991$ with \emph{mvs}).}
+\label{tab:obs_model_params}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+\multirow{2}{*}{\textbf{Feature}} &
+\multicolumn{2}{c}{\textbf{Cooperative}} &
+\multicolumn{2}{c}{\textbf{Non-cooperative}} &
+\multirow{2}{*}{$|\Delta\mu|$} &
+\multirow{2}{*}{$\bar{\sigma}$} &
+\multirow{2}{*}{\textbf{Sep.}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+& $\mu$ & $\sigma$ & $\mu$ & $\sigma$ & & & \\
+\midrule
+Abs.\ rel.\ distance (ard, m) & 27.50 & 9.02 & 22.76 & 10.57 & 4.74 & 9.79 & 0.48\,\textbf{B} \\
+Merge speed (mvs, m/s) & 9.57 & 3.88 & 13.24 & 1.68 & 3.67 & 2.78 & 1.32\,\textbf{OK} \\
+Merge accel.\ (mva, m/s$^2$) & $-0.938$ & 1.695 & $-0.045$ & 0.500 & 0.893 & 1.098 & 0.81\,\textbf{OK} \\
+\bottomrule
+\end{tabular}}
+\begin{tablenotes}
+\small
+\item Sep.\ $= |\Delta\mu|/\bar{\sigma}$; \textbf{B}: borderline (0.35--0.50);
+  \textbf{OK}: adequate ($>$0.50).
+\end{tablenotes}
+\end{table}

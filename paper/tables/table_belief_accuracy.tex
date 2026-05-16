@@ -1,0 +1,23 @@
+% Table 10: Belief accuracy by policy
+% Source: eval_final_v6_cleanobs/policy_summary.json belief_accuracy
+\begin{table}[htbp]
+\centering
+\caption{Bayesian belief accuracy measured on in-window steps during the
+  policy evaluation (eval\_final\_v6\_cleanobs).
+  Accuracy = fraction of steps where $\arg\max_m b_t(m)$ matches the true
+  hidden courtesy type. For \texttt{oracle\_policy}, this diagnostic reports
+  the shared external Bayesian filter run for analysis, not the one-hot
+  courtesy belief passed to the oracle action table.}
+\label{tab:belief_accuracy}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Policy} & \textbf{Coop acc.} & \textbf{Non-coop acc.} & \textbf{Overall acc.} & \textbf{Steps} \\
+\midrule
+oracle\_policy & 97.4\% & 78.4\% & 80.9\% & 4{,}386 \\
+belief\_policy & 98.7\% & 79.4\% & 82.7\% & 4{,}583 \\
+rule\_policy   & 97.5\% & 79.6\% & 82.6\% & 4{,}572 \\
+random\_policy & 98.5\% & 81.6\% & 88.2\% & 3{,}369 \\
+\bottomrule
+\end{tabular}
+\end{table}

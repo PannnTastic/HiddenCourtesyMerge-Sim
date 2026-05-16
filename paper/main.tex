@@ -1,0 +1,69 @@
+\documentclass[10pt,a4paper]{article}
+
+% ── Encoding & fonts ──────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% ── Page layout ───────────────────────────────────────────────────────────────
+\usepackage[top=2.5cm,bottom=2.5cm,left=2.5cm,right=2.5cm]{geometry}
+
+% ── Core packages ─────────────────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+% \usepackage{enumitem}  % not used
+\usepackage{threeparttable}   % for tablenotes
+\usepackage{microtype}
+\usepackage{parskip}          % paragraph spacing
+\emergencystretch=1em         % prevents underfull hbox badness in short paragraphs
+
+% ── Hyperlinks ────────────────────────────────────────────────────────────────
+\usepackage[
+  colorlinks=true,
+  linkcolor=blue!70!black,
+  citecolor=green!50!black,
+  urlcolor=blue!60!black,
+  breaklinks=true
+]{hyperref}
+
+% ── Bibliography ──────────────────────────────────────────────────────────────
+\usepackage[numbers,sort&compress]{natbib}
+\bibliographystyle{unsrtnat}
+
+% ── Figure path ───────────────────────────────────────────────────────────────
+\graphicspath{{figures/}}
+
+% ── Title block ───────────────────────────────────────────────────────────────
+\title{\textbf{HiddenCourtesyMerge-Sim: A Controlled Benchmark for
+  Belief-Based Planning Under Hidden Driver Courtesy}}
+
+\author{Anonymous Author(s)\\
+\textit{[Affiliation withheld for review]}}
+
+\date{}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+\maketitle
+
+\input{sections/01_abstract}
+
+\input{sections/02_introduction}
+\input{sections/03_related_work}
+\input{sections/04_pomdp_formulation}  % Benchmark and Methods
+\input{sections/09_results}
+\input{sections/10_discussion}         % Discussion and Limitations
+\input{sections/12_conclusion}
+
+\bibliography{references}
+
+\end{document}

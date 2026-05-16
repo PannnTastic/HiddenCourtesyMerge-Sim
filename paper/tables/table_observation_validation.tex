@@ -1,0 +1,22 @@
+% Table 5: Observation model validation metrics
+% Source: observation_model.json _validation key
+\begin{table}[htbp]
+\centering
+\caption{Observation model validation metrics on held-out calibration steps
+  ($n{=}1{,}809$ validation steps).
+  All metrics are evaluated on in-window steps only.}
+\label{tab:obs_model_val}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} & \textbf{Model} & \textbf{Uniform baseline} \\
+\midrule
+Step-level classification accuracy & 98.3\% & 50.0\% \\
+Mean NLL (nats) & 0.168 & 0.693 ($=\ln 2$) \\
+Brier score & 0.055 & 0.500 \\
+ECE & 0.092 & --- \\
+\midrule
+Validation steps ($n$) & \multicolumn{2}{c}{1{,}809} \\
+\bottomrule
+\end{tabular}
+\end{table}

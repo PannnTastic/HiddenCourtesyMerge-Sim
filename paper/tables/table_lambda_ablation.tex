@@ -1,0 +1,36 @@
+% Table: λ ablation — mean-reversion parameter sensitivity
+% Source: review_analyses_cleanobs/lambda_ablation.csv (3,000-episode dataset, seed 7)
+\begin{table}[htbp]
+\centering
+\caption{Sensitivity of the Bayesian filter to the mean-reversion parameter
+  $\lambda$ (Eq.~\eqref{eq:reg}), evaluated on the full 3{,}000-episode dataset
+  (seed 7) for reporting; $\lambda$ was selected on the train and validation
+  splits only (2{,}550 episodes; test split withheld from selection).
+  \emph{Final-step acc.}: fraction of episodes whose last in-window belief
+  assigns majority probability to the correct courtesy type
+  (the metric most relevant to downstream policy quality).
+  \emph{ECE}: expected calibration error.
+  The selected value $\lambda{=}0.08$ (bold) achieves final-step accuracy within
+  $0.1$\,pp of the peak ($\lambda{=}0.12$) while maintaining lower ECE than
+  all $\lambda{<}0.08$.}
+\label{tab:lambda_ablation}
+\small
+\begin{tabular}{ccccc}
+\toprule
+$\lambda$ & Overall acc. & Final-step acc. & Brier score & ECE \\
+\midrule
+0.00 & 0.793 & 0.891 & 0.382 & 0.175 \\
+0.02 & 0.825 & 0.934 & 0.285 & 0.113 \\
+0.04 & 0.831 & 0.936 & 0.268 & 0.093 \\
+\textbf{0.08} & \textbf{0.836} & \textbf{0.938} & \textbf{0.249} & \textbf{0.063} \\
+0.12 & 0.840 & 0.939 & 0.239 & 0.037 \\
+0.16 & 0.844 & 0.937 & 0.235 & 0.021 \\
+0.20 & 0.846 & 0.934 & 0.233 & 0.024 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\small
+\item $\lambda{>}0.12$ pulls the late-episode posterior back toward the uniform
+  prior, degrading final-step accuracy despite further reducing ECE.
+\end{tablenotes}
+\end{table}

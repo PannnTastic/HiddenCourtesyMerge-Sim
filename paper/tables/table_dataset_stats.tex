@@ -1,0 +1,34 @@
+% Table 2: Dataset statistics
+% Source: HiddenCourtesyMerge-Sim/config.json and episodes.csv
+\begin{table}[htbp]
+\centering
+\caption{HiddenCourtesyMerge-Sim dataset statistics.
+  Split assigned deterministically by episode index.
+  ``In-window steps'' counts timesteps where the merge vehicle is 2--40\,m
+  ahead of the ego; belief updates occur only on these steps.}
+\label{tab:dataset_stats}
+\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Property} & \textbf{Value} \\
+\midrule
+Environment & highway-env \texttt{merge-v0} \\
+Total episodes & 3{,}000 \\
+Courtesy balance (coop / non-coop) & 1{,}500 / 1{,}500 \\
+Train / validation / test split & 2{,}100 / 450 / 450 \\
+Max steps per episode & 60 \\
+Mean episode length (steps) & 58.0 \\
+Observation noise range & $[0.0,\ 0.35]$ (per episode) \\
+Traffic density range & $[0.7,\ 1.1]$ (per episode) \\
+\midrule
+Overall collision rate & 13.4\% \\
+Overall success rate & 86.6\% \\
+Episodes with interaction window & 2{,}222 / 3{,}000 (74\%) \\
+Total in-window steps & 46{,}896 / 174{,}046 \\
+\midrule
+Belief accuracy (in-window steps) & 85.9\% \\
+Belief accuracy (final episode step) & 91.1\% \\
+Belief regularisation $\lambda$ & 0.08 \\
+\bottomrule
+\end{tabular}
+\end{table}

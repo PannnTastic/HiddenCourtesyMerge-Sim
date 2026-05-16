@@ -1,0 +1,97 @@
+% Section: Discussion and Limitations
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Key Findings}
+The oracle experiment establishes that hidden courtesy is a
+decision-relevant latent variable: knowing whether a merge vehicle is
+cooperative or non-cooperative reduces collisions by 8 percentage points
+with moderate effect size ($|h|{=}0.230$).
+The benefit is concentrated in non-cooperative episodes, where the merge
+vehicle narrows the safe-action margin; cooperative vehicles create gaps
+large enough that the uniform-prior heuristic already yields safely.
+
+The POMCP result indicates that the oracle is an upper bound only for
+the heuristic action table, not for the full policy space.
+UCT planning over the reward function identifies encounter-specific action
+sequences that the hand-designed V-shaped caution rule cannot represent:
+POMCP's gain over the oracle-heuristic baseline ($d{=}0.221$) is comparable
+to the oracle-heuristic gain over rule ($d{=}0.233$).
+This should be read as evidence that planning improves on the hand-designed
+action table, not as a claim that POMCP exceeds an optimal policy with perfect
+mode knowledge.
+
+\subsection{The Observation Bottleneck}
+The evidence suggests that the belief policy does not outperform rule because
+the Bayesian filter converges slowly during the critical early interaction
+window.
+Non-cooperative IDM vehicles briefly decelerate in response to ego
+detection before reasserting their high target speed, producing
+acceleration signals that temporarily resemble cooperative behaviour;
+sustained non-cooperative speed requires roughly 15--20 interaction-window
+steps before \emph{mvs} and \emph{mva} accumulate discriminative evidence.
+The belief-gain sweep directly rules out action-table expressiveness as
+the bottleneck: if the heuristic were too insensitive to the belief signal,
+a $10\times$ gain amplification would improve belief-policy performance.
+It does not (Table~\ref{tab:gain_sweep}; Figure~\ref{fig:gain_sweep}).
+Future designs should target the early-window transient directly---through
+recurrent observation encoders, longer pre-interaction observation windows,
+or planning architectures that are robust to early-phase ambiguity.
+
+\subsection{Limitations}
+All results are from the highway-env \texttt{merge-v0} simulator; no
+real-world deployment or human-driver behavioural validation is performed, and
+none is claimed---results characterise the simulator only.
+Courtesy types are operationalised via IDM/MOBIL parameter ranges and do
+not model empirical human psychology or the continuous spectrum of real
+driver behaviour.
+The $n{=}300$ evaluation is underpowered for the belief-vs.-rule
+comparison ($n{\approx}1{,}960$ needed for 80\% power); the null result
+should be treated as suggestive.
+The 70/15/15 dataset split is assigned by episode index at the same global
+seed; sequentially generated episodes may share correlated traffic densities,
+reducing the effective sample size for any model trained on the dataset.
+An empirical lag-1 autocorrelation check on episode-level covariates shows
+that traffic density and observation noise have lag-1 correlations $<0.03$,
+indicating that sequential correlation is negligible in practice; the hidden
+courtesy type shows lag-1 correlation $-0.50$, reflecting the generator's
+near-perfect alternation that ensures balanced courtesy classes and should be
+documented because it affects split construction.
+The dataset was generated with \texttt{belief\_policy} as the ego,
+under-representing high-risk states relative to a random ego; the seed-17
+matched policy evaluation is unaffected, but researchers training
+learning-based planners on the released dataset should account for this
+trajectory-distribution bias (see \S\ref{sec:benchmark}).
+The POMCP generative model uses mean IDM parameters per mode rather than
+sampling from the full injected distributions, introducing model error
+whose sensitivity is not studied here.
+A rollout-isolation run replaces the conservative POMCP rollout trigger
+(SLOWER when $d{<}15$\,m or TTC\,$<$\,6\,s) with the heuristic emergency
+trigger (TTC\,$<$\,3\,s or gap\,$<$\,8\,m) and obtains the same collision
+rate with nearly identical reward (Table~\ref{tab:pomcp_rollout_ablation}).
+This reduces, but does not eliminate, the rollout-confound concern because
+the POMCP generative model and planning reward still differ from the
+environment reward.
+The planning reward uses a narrower collision zone ($d{<}1.5$\,m) and
+omits the environment's survival bonus, creating a planning--evaluation
+reward mismatch that may bias action selection during episodes in which the
+ego is close to but not inside the $1.5$\,m threshold.
+The observation model's product-of-Gaussians independence assumption is
+imperfectly satisfied (largest residual correlation: \emph{mvs}/\emph{mva},
+$r{=}0.399$) and the 5.2:1 calibration step imbalance increases
+cooperative parameter uncertainty.
+A held-out full-covariance Gaussian improves offline belief metrics
+(Table~\ref{tab:covariance_ablation}); closed-loop reruns with this likelihood
+remain an important benchmark extension.
+A naive majority-class (non-cooperative) classifier achieves 84\% step-level
+accuracy on calibration window steps; the three-feature model's 98.3\%
+confirms that discriminative information is drawn from the features rather
+than the class prior.
+The 12-second episode cap ($60{\times}0.2$\,s) is sufficient for the
+majority of merge interactions at the benchmark traffic density, but late-starting
+merge events where the merge vehicle enters the interaction window
+after step 40 experience fewer than 4\,s of available observation, reducing
+belief accuracy for those episodes.
+The QMDP approximation (16-state discretisation, $n{=}50$ training
+episodes) achieved 34--35\% collision rate with 50\% Q-table state
+coverage and is excluded from the primary evaluation.

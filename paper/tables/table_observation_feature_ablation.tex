@@ -1,0 +1,32 @@
+% Table: Observation feature ablation
+% Source: review_analyses_cleanobs/observation_feature_ablation.csv
+\begin{table}[htbp]
+\centering
+\caption{Closed-loop belief-filter ablation on the 3{,}000-episode dataset
+  using the calibrated Gaussian parameters. The final model drops \emph{urg}
+  and \emph{rs}; although the full five-feature filter has slightly higher
+  in-window accuracy, its near-duplicate \emph{rs}/\emph{mvs} evidence sharply
+  reduces final-episode accuracy.}
+\label{tab:obs_feature_ablation}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrr}
+\toprule
+\textbf{Model} & \textbf{Features} & \textbf{In-window acc.} &
+\textbf{Final acc.} & \textbf{NLL} & \textbf{ECE} \\
+\midrule
+Full candidate & urg, ard, rs, mvs, mva & 85.3\% & 85.7\% & 0.386 & 0.064 \\
+No urg & ard, rs, mvs, mva & 85.8\% & 92.8\% & 0.370 & 0.059 \\
+No rs & urg, ard, mvs, mva & 83.5\% & 86.1\% & 0.421 & 0.065 \\
+No mvs & urg, ard, rs, mva & 83.0\% & 86.3\% & 0.429 & 0.069 \\
+MVS/MVA only & mvs, mva & 83.8\% & 87.3\% & 0.415 & 0.063 \\
+\textbf{Final} & \textbf{ard, mvs, mva} & \textbf{83.6\%} & \textbf{93.8\%} & \textbf{0.412} & \textbf{0.063} \\
+\bottomrule
+\end{tabular}}
+\begin{tablenotes}
+\small
+\item This table evaluates the sequential Bayesian filter on dataset
+  rollouts. Table~\ref{tab:obs_model_val} separately reports the held-out
+  step-level Gaussian classifier accuracy (98.3\%).
+\end{tablenotes}
+\end{table}

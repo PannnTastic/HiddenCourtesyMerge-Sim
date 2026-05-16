@@ -1,0 +1,32 @@
+% Table: Belief accuracy by interaction step (where/when diagnostic)
+% Source: D:\MERGE\where_when_cleanobs\
+\begin{table}[htbp]
+\centering
+\caption{Belief classification accuracy as a function of interaction-window step
+  number, non-cooperative episodes only (\texttt{belief\_policy},
+  $n{=}300$ evaluation).
+  Steps are numbered from first entry into the interaction window ($d{<}40$\,m).
+  Accuracy rises as the observation sequence accumulates evidence; the
+  critical early-window deficit (steps~1--5: 71.3\%) is the primary
+  bottleneck for the belief policy. Brackets report bootstrap 95\% CIs for
+  step-level accuracy.}
+\label{tab:where_when}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Interaction-window step(s)} & \textbf{Steps} &
+\textbf{Episodes} & \textbf{Belief accuracy (95\% CI)} \\
+\midrule
+Step 1  & 150 & 150 & 75.3\% [68.7, 82.7] \\
+Step 2  & 150 & 150 & 71.3\% [64.0, 78.7] \\
+Step 3  & 150 & 150 & 70.0\% [62.7, 77.3] \\
+Steps 4--5 & 300 & 150 & 70.0\% [65.0, 75.0] \\
+Steps 6--10 & 750 & 150 & 72.5\% [69.3, 75.6] \\
+Steps 11--20 & 1{,}459 & 150 & 80.7\% [78.8, 82.8] \\
+Steps 21+ & 854 & 124 & 90.3\% [88.4, 92.2] \\
+\midrule
+All in-window steps (dataset, belief policy) & 46{,}896 & 3{,}000 & 83.6\% \\
+Final step per episode (dataset)              & 3{,}000 & 3{,}000 & 93.8\% \\
+\bottomrule
+\end{tabular}
+\end{table}
