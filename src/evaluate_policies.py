@@ -54,6 +54,7 @@ from generate_hidden_courtesy_merge_dataset import (
     GeneratorConfig,
     _POLICY_DT,
     choose_ego_action,
+    configure_belief_model,
     compute_gaps,
     configure_courtesy_vehicle,
     estimate_ttc,
@@ -78,15 +79,18 @@ DEFAULT_POLICIES = (
 )
 POLICIES = (
     *DEFAULT_POLICIES, "qmdp_policy", "oracle_qmdp", "pomcp_policy",
+    "early_oracle", "delayed_oracle",
 )
 POLICY_SEED_OFFSETS: Dict[str, int] = {
-    "belief_policy": 101,
-    "rule_policy":   202,
-    "random_policy": 303,
-    "oracle_policy": 404,
-    "qmdp_policy":   505,
-    "oracle_qmdp":   606,
-    "pomcp_policy":  707,
+    "belief_policy":  101,
+    "rule_policy":    202,
+    "random_policy":  303,
+    "oracle_policy":  404,
+    "qmdp_policy":    505,
+    "oracle_qmdp":    606,
+    "pomcp_policy":   707,
+    "early_oracle":   808,
+    "delayed_oracle": 809,
 }
 # Policies that require the QMDP Q-tables.
 _QMDP_POLICIES = {"qmdp_policy", "oracle_qmdp"}
@@ -120,6 +124,36 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=None,
         help="Use a fixed traffic density for all policies, useful for density ablations.",
+    )
+    parser.add_argument(
+        "--belief-model",
+        choices=("diagonal", "full_cov"),
+        default="diagonal",
+        help="Observation likelihood used by the Bayesian courtesy filter.",
+    )
+    parser.add_argument(
+        "--full-cov-dataset",
+        type=str,
+        default="HiddenCourtesyMerge-Sim-cleanobs/steps_with_belief.csv",
+        help="steps_with_belief.csv used to fit the full-covariance likelihood.",
+    )
+    parser.add_argument(
+        "--observation-noise-mode",
+        choices=("sampled", "fixed", "scaled"),
+        default="sampled",
+        help="How to set per-episode observation noise.",
+    )
+    parser.add_argument(
+        "--observation-noise-value",
+        type=float,
+        default=0.0,
+        help="Fixed observation-noise value when --observation-noise-mode=fixed.",
+    )
+    parser.add_argument(
+        "--observation-noise-scale",
+        type=float,
+        default=1.0,
+        help="Multiplier for sampled observation noise when --observation-noise-mode=scaled.",
     )
     parser.add_argument("--qmdp-episodes",   type=int,   default=50,
                         help="Q-learning episodes per courtesy mode for QMDP solver.")
@@ -318,6 +352,7 @@ def select_action(
     merge_speed: float = np.nan,
     relative_distance: float = np.nan,
     pomcp_instance=None,
+    window_step: int = 0,
 ) -> int:
     if policy_name == "belief_policy":
         return choose_ego_action(
@@ -334,6 +369,22 @@ def select_action(
     if policy_name == "oracle_policy":
         return choose_ego_action(
             _one_hot_belief(courtesy), ttc, front_gap, rng,
+            merge_speed=merge_speed, ego_speed=ego_speed, relative_distance=relative_distance,
+        )
+    if policy_name == "early_oracle":
+        # Oracle belief for window steps 1-5 (where Z-transient corrupts filter),
+        # then normal Bayesian belief from step 6 onward.
+        effective_belief = _one_hot_belief(courtesy) if 0 < window_step <= 5 else belief
+        return choose_ego_action(
+            effective_belief, ttc, front_gap, rng,
+            merge_speed=merge_speed, ego_speed=ego_speed, relative_distance=relative_distance,
+        )
+    if policy_name == "delayed_oracle":
+        # Normal Bayesian belief for the first five in-window steps, then reveal
+        # the true courtesy label to test whether late oracle information helps.
+        effective_belief = _one_hot_belief(courtesy) if window_step > 5 else belief
+        return choose_ego_action(
+            effective_belief, ttc, front_gap, rng,
             merge_speed=merge_speed, ego_speed=ego_speed, relative_distance=relative_distance,
         )
     if policy_name in _QMDP_POLICIES:
@@ -398,6 +449,7 @@ def evaluate_episode(
     previous_speed: Optional[float] = None
     prev_merge_speed: Optional[float] = None
     close_call_count = 0
+    window_step_count = 0  # counts steps elapsed inside the interaction window
 
     for timestep in range(config.max_steps):
         ego = getattr(env.unwrapped, "vehicle", None)
@@ -442,6 +494,7 @@ def evaluate_episode(
             if not np.isnan(estimated_ttc) and not np.isnan(relative_distance) and relative_distance > 0:
                 critical_ttcs.append(float(estimated_ttc))
         if in_window:
+            window_step_count += 1
             belief = update_belief(
                 belief,
                 observed_urgency, observed_abs_relative_distance,
@@ -457,6 +510,7 @@ def evaluate_episode(
             merge_speed=observed_merge_speed,
             relative_distance=relative_distance,
             pomcp_instance=pomcp_instance,
+            window_step=window_step_count,
         )
         _, env_reward, terminated, truncated, _ = env.step(action)
         done = bool(terminated or truncated)
@@ -1100,6 +1154,7 @@ def save_belief_convergence_plot(steps: pd.DataFrame, output_dir: Path) -> None:
 def main() -> None:
     args = parse_args()
     load_obs_model()
+    configure_belief_model(args.belief_model, args.full_cov_dataset)
     random.seed(args.seed)
     np.random.seed(args.seed)
     rng = np.random.default_rng(args.seed)
@@ -1147,7 +1202,13 @@ def main() -> None:
         if args.traffic_density is not None
         else rng.uniform(*config.traffic_density_range, size=args.episodes)
     )
-    noise   = rng.uniform(*config.observation_noise_range, size=args.episodes)
+    base_noise = rng.uniform(*config.observation_noise_range, size=args.episodes)
+    if args.observation_noise_mode == "fixed":
+        noise = np.full(args.episodes, float(args.observation_noise_value))
+    elif args.observation_noise_mode == "scaled":
+        noise = base_noise * float(args.observation_noise_scale)
+    else:
+        noise = base_noise
 
     episode_rows: List[Dict[str, Any]] = []
     step_rows:    List[Dict[str, Any]] = []
@@ -1207,6 +1268,13 @@ def main() -> None:
         "note": "Simulation-only policy comparison for controlled synthetic latent driver behaviour.",
         "policies": list(args.policies),
         "episodes_per_policy": args.episodes,
+        "belief_model": args.belief_model,
+        "full_cov_dataset": args.full_cov_dataset if args.belief_model == "full_cov" else None,
+        "observation_noise_mode": args.observation_noise_mode,
+        "observation_noise_value": args.observation_noise_value,
+        "observation_noise_scale": args.observation_noise_scale,
+        "observation_noise_min": float(np.min(noise)) if len(noise) else None,
+        "observation_noise_max": float(np.max(noise)) if len(noise) else None,
         "fairness_note": (
             "All policies share the same env seed, hidden courtesy, traffic density, and "
             "observation noise per episode index. Action sampling uses a separate per-policy "

@@ -7,7 +7,7 @@ calibrated observation model) and shows what the paper calls the
 
 Controls
 --------
-  B / O / R / N  : switch policy (Belief / Oracle / Rule / raNdom)
+  P / B / O / R / N : switch policy (POMCP / Belief / Oracle / Rule / raNdom)
   C / X / Z      : force Courtesy (Cooperative / non-eXclusive / random-Z)
   SPACE          : pause / resume
   ENTER          : new episode immediately
@@ -46,6 +46,7 @@ from generate_hidden_courtesy_merge_dataset import (
     select_merge_vehicle,
     update_belief as gen_update_belief,
 )
+from pomcp_policy import POMCPPolicy
 
 # ── Colour palette ───────────────────────────────────────────────────
 BG        = (15,  17,  24)
@@ -73,6 +74,9 @@ H        = SIM_H + HUD_H
 MAX_STEPS   = 60
 FPS         = 30
 SPEED_STEPS = [1, 2, 4, 8]
+POMCP_SEED_OFFSET = 707
+POMCP_SIMS = 100
+POMCP_HORIZON = 10
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -117,6 +121,7 @@ def _mva(cur: float, prev: float | None) -> float:
 class MergeVisualizer:
 
     POLICY_KEYS = {
+        pygame.K_p: "pomcp_policy",
         pygame.K_b: "belief_policy",
         pygame.K_o: "oracle_policy",
         pygame.K_r: "rule_policy",
@@ -149,6 +154,7 @@ class MergeVisualizer:
         self.paused          = False
         self.speed_idx       = 0          # index into SPEED_STEPS
         self.ep_seed         = 200
+        self.current_ep_seed = self.ep_seed
         self.ep_count        = 0
 
         # ── RNG & obs model (needed before env) ─────────────────────
@@ -158,6 +164,11 @@ class MergeVisualizer:
         # ── Env: created AFTER our display; offscreen_rendering keeps
         #    highway-env from calling set_mode() and stealing our window ──
         self.env = _make_env_once()
+        self.pomcp = POMCPPolicy.build(
+            "observation_model.json",
+            n_simulations=POMCP_SIMS,
+            horizon=POMCP_HORIZON,
+        )
 
         # ── Per-episode state ────────────────────────────────────────
         self.mv              = None
@@ -186,7 +197,9 @@ class MergeVisualizer:
 
     def _reset(self) -> None:
         density = float(self.rng.uniform(0.7, 1.1))
-        _reset_env(self.env, self.ep_seed, density)   # reuse env — never close
+        episode_seed = self.ep_seed
+        self.current_ep_seed = episode_seed
+        _reset_env(self.env, episode_seed, density)   # reuse env — never close
         self.ep_seed += 1
         self.ep_count += 1
 
@@ -214,6 +227,7 @@ class MergeVisualizer:
         self.belief_hist        = []
         self.window_hist        = []
         self.window_step_count  = 0
+        self.pomcp.reset(seed=episode_seed + POMCP_SEED_OFFSET)
 
     # ── Simulation step ──────────────────────────────────────────────
 
@@ -283,6 +297,14 @@ class MergeVisualizer:
     def _choose_action(self, ego_spd: float, mv_spd: float, rel_dist: float) -> int:
         if self.policy_name == "random_policy":
             return int(self.rng.integers(0, 5))
+
+        if self.policy_name == "pomcp_policy":
+            return self.pomcp.plan(
+                rel_dist=rel_dist,
+                ego_speed=ego_spd,
+                merge_speed=mv_spd,
+                belief=self.belief.copy(),
+            )
 
         b = self.belief.copy()
 
@@ -408,7 +430,7 @@ class MergeVisualizer:
 
         # ── R5: Metrics strip ──────────────────────────────────
         pol_short = self.policy_name.replace("_policy", "").upper()
-        pol_col   = {"BELIEF": BLUE, "ORACLE": COOP_COL,
+        pol_col   = {"POMCP": ORANGE, "BELIEF": BLUE, "ORACLE": COOP_COL,
                      "RULE": YELLOW, "RANDOM": GRAY}.get(pol_short, WHITE)
 
         metrics = [
@@ -502,6 +524,7 @@ class MergeVisualizer:
 
         # ── Policy ──────────────────────────────────────────────
         title("== POLICY ==")
+        row("P", f"POMCP     ({POMCP_SIMS} sims)", self.policy_name == "pomcp_policy",  ORANGE)
         row("B", "Belief    (Bayesian)",  self.policy_name == "belief_policy",  BLUE)
         row("O", "Oracle    (cheat!)",    self.policy_name == "oracle_policy",  COOP_COL)
         row("R", "Rule      (no belief)", self.policy_name == "rule_policy",    YELLOW)
@@ -545,7 +568,7 @@ class MergeVisualizer:
         finding = [
             "Belief policy does NOT",
             "significantly beat rule",
-            "(p_adj=1.0, n=300).",
+            "(p_adj=0.489, n=1960).",
             "",
             "Reason: belief is only",
             "71.3% accurate in the",
@@ -553,8 +576,12 @@ class MergeVisualizer:
             "ego must act.",
             "",
             "Oracle proves courtesy",
-            "matters (p=0.013), but",
-            "the filter is too slow.",
+            "matters (p_adj=0.005),",
+            "but the filter is slow.",
+            "",
+            "POMCP plans over belief",
+            "uncertainty and reaches",
+            "5.0% collision in paper.",
         ]
         for line in finding:
             if line:
@@ -586,6 +613,8 @@ class MergeVisualizer:
                         auto_reset_timer = 0
                     elif k in self.POLICY_KEYS:
                         self.policy_name = self.POLICY_KEYS[k]
+                        if self.policy_name == "pomcp_policy":
+                            self.pomcp.reset(seed=self.current_ep_seed + POMCP_SEED_OFFSET)
                     elif k in self.COURTESY_KEYS:
                         self.forced_courtesy = self.COURTESY_KEYS[k]
                     elif k == pygame.K_UP:

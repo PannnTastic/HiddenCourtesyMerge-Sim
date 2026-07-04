@@ -28,6 +28,17 @@ paper/*.toc
 paper/*.fls
 paper/*.fdb_latexmk
 paper/main.pdf
+paper/main_ieee.pdf
+paper/main_ieee.tex
+paper/sections/99_appendix.tex
+
+# Generated paper tables from local analysis runs. Keep the scripts that
+# reproduce them; do not commit ad-hoc regenerated table artifacts here.
+paper/tables/table_confirmatory_1960.tex
+paper/tables/table_fullcov_closed_loop.tex
+paper/tables/table_generating_policy_bias.tex
+paper/tables/table_noise_stress.tex
+paper/tables/table_observation_bootstrap_uncertainty.tex
 
 # Legacy split-section drafts not included by paper/main.tex
 paper/sections/05_simulation_benchmark.tex
@@ -39,18 +50,50 @@ paper/sections/11_limitations.tex
 # Generated experiment outputs.
 # Canonical paper tables/figures are committed under paper/.
 eval_*/
+delayed_oracle*/
 pilot_*/
 policy_eval_*/
 pomcp_*/
 !pomcp_policy.py
 HiddenCourtesyMerge-Sim*/
+dataset_*_ego/
+generating_policy_bias_analysis/
+generating_policy_bias*_analysis/
+observation_uncertainty_analysis/
+noise_stress_sweep/
+smoke_bias_analysis/
+smoke_confirmatory/
+smoke_noise_sweep/
+smoke_pomcp_noise/
+smoke_rule_ego_dataset/
+smoke_tier1_diag/
+smoke_tier1_fullcov/
+smoke_*/
 belief_gain_sweep/
 merge_selection_check*/
 paper_figures*/
 review_analyses*/
+review_analyses_cleanobs/
 sanity_300/
 where_when_cleanobs/
-gifs/
+gifs/*
+!gifs/
+!gifs/*.gif
+
+# Generated policy-evaluation outputs (recreate with evaluate_policies.py).
+policy_eval/
+
+# Ad-hoc paper rendering screenshots.
+tmp_*.png
+
+# Local-only development / one-off scripts (kept out of the public repo).
+generate_paper_figures.py
+make_schematic.py
+make_schematic_v2.py
+recompute_dataset_beliefs.py
+run_review_blocker_analyses.py
+verify_merge_selection.py
+where_when_belief_fails.py
 
 # Local exploratory notes
 PROJECT_STATUS.md

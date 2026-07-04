@@ -112,7 +112,13 @@ def parse_args() -> GeneratorConfig:
     parser.add_argument("--max-steps", type=int, default=GeneratorConfig.max_steps)
     parser.add_argument("--seed", type=int, default=GeneratorConfig.seed)
     parser.add_argument("--output", type=str, default=GeneratorConfig.output)
-    parser.add_argument("--policy-name", type=str, default=GeneratorConfig.policy_name)
+    parser.add_argument(
+        "--policy-name",
+        type=str,
+        default=GeneratorConfig.policy_name,
+        choices=("belief_policy", "rule_policy", "random_policy"),
+        help="Ego policy used to generate dataset trajectories.",
+    )
     parser.add_argument(
         "--traffic-density",
         type=float,
@@ -127,6 +133,36 @@ def parse_args() -> GeneratorConfig:
         output=args.output,
         policy_name=args.policy_name,
         traffic_density=args.traffic_density,
+    )
+
+
+def dataset_ego_action(
+    policy_name: str,
+    belief: np.ndarray,
+    observed_ttc: float,
+    observed_front_gap: float,
+    rng: np.random.Generator,
+    merge_speed: float = np.nan,
+    ego_speed: float = np.nan,
+    relative_distance: float = np.nan,
+) -> int:
+    """Select the data-generating ego action for the requested dataset policy."""
+    if policy_name == "belief_policy":
+        action_belief = belief
+    elif policy_name == "rule_policy":
+        action_belief = np.ones(len(COURTESY_TYPES), dtype=float) / len(COURTESY_TYPES)
+    elif policy_name == "random_policy":
+        return int(rng.integers(0, len(ACTION_NAMES)))
+    else:
+        raise ValueError(f"Unsupported dataset policy_name={policy_name!r}")
+    return choose_ego_action(
+        action_belief,
+        observed_ttc,
+        observed_front_gap,
+        rng,
+        merge_speed=merge_speed,
+        ego_speed=ego_speed,
+        relative_distance=relative_distance,
     )
 
 
@@ -406,6 +442,9 @@ _INTERACTION_RANGE_M: float = 40.0
 _INTERACTION_NEAR_M: float  = 2.0
 _POLICY_DT: float = 0.2  # seconds per policy step (policy_frequency = 5 Hz)
 
+_BELIEF_MODEL: str = "diagonal"
+_FULL_COV_MODEL: Dict[str, Dict[str, Any]] = {}
+
 
 def in_interaction_window(relative_distance: float, mv_speed: float = np.nan) -> bool:
     """True while the selected merge vehicle is ahead in the interaction window."""
@@ -467,6 +506,76 @@ _OBS_FEATURES = (
     ("mva", (-8.0,  7.0), ("mva_mu", "mva_sigma")),   # merge vehicle acceleration (m/s²)
 )
 
+_FULL_COV_COLUMNS = (
+    "observed_abs_relative_distance",
+    "observed_merge_speed",
+    "observed_merge_acceleration",
+)
+
+
+def fit_full_cov_observation_model(
+    steps_with_belief_path: str = "HiddenCourtesyMerge-Sim-cleanobs/steps_with_belief.csv",
+) -> Dict[str, Dict[str, Any]]:
+    """Fit a full-covariance Gaussian model on train-split in-window steps."""
+    path = Path(steps_with_belief_path)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Full-covariance belief model requires {path}. "
+            "Generate the canonical dataset or pass --full-cov-dataset."
+        )
+    df = pd.read_csv(path)
+    required = {"split", "hidden_courtesy", "in_interaction_window", *_FULL_COV_COLUMNS}
+    missing = required.difference(df.columns)
+    if missing:
+        raise ValueError(f"{path} is missing required columns: {sorted(missing)}")
+    train = df[(df["split"] == "train") & (df["in_interaction_window"].astype(bool))]
+    train = train.dropna(subset=list(_FULL_COV_COLUMNS))
+    model: Dict[str, Dict[str, Any]] = {}
+    for mode in COURTESY_TYPES:
+        sub = train[train["hidden_courtesy"] == mode][list(_FULL_COV_COLUMNS)].to_numpy(dtype=float)
+        if len(sub) < 4:
+            raise ValueError(f"Need at least 4 train samples for {mode}, found {len(sub)}")
+        mu = sub.mean(axis=0)
+        cov = np.cov(sub, rowvar=False)
+        cov = np.asarray(cov, dtype=float) + np.eye(len(_FULL_COV_COLUMNS)) * 1e-4
+        model[mode] = {
+            "mean": mu,
+            "cov": cov,
+            "n": int(len(sub)),
+        }
+    return model
+
+
+def configure_belief_model(
+    belief_model: str = "diagonal",
+    full_cov_dataset_path: str = "HiddenCourtesyMerge-Sim-cleanobs/steps_with_belief.csv",
+) -> None:
+    """Select the likelihood used by update_belief()."""
+    global _BELIEF_MODEL, _FULL_COV_MODEL
+    if belief_model not in {"diagonal", "full_cov"}:
+        raise ValueError(f"Unknown belief_model={belief_model!r}")
+    _BELIEF_MODEL = belief_model
+    if belief_model == "full_cov":
+        _FULL_COV_MODEL = fit_full_cov_observation_model(full_cov_dataset_path)
+        ns = {mode: payload["n"] for mode, payload in _FULL_COV_MODEL.items()}
+        print(f"[belief_model] Using full-covariance Gaussian fitted from {full_cov_dataset_path}: n={ns}")
+    else:
+        _FULL_COV_MODEL = {}
+        print("[belief_model] Using diagonal product-of-Gaussians likelihood")
+
+
+def _full_cov_log_pdf(values: np.ndarray, mean: np.ndarray, cov: np.ndarray) -> float:
+    k = int(len(values))
+    cov = np.asarray(cov, dtype=float) + np.eye(k) * 1e-6
+    diff = np.asarray(values, dtype=float) - np.asarray(mean, dtype=float)
+    sign, logdet = np.linalg.slogdet(cov)
+    if sign <= 0:
+        cov = cov + np.eye(k) * 1e-3
+        sign, logdet = np.linalg.slogdet(cov)
+    inv = np.linalg.pinv(cov)
+    quad = float(diff.T @ inv @ diff)
+    return -0.5 * (k * math.log(2.0 * math.pi) + float(logdet) + quad)
+
 
 def likelihoods(
     urgency: float,
@@ -489,21 +598,30 @@ def likelihoods(
         "mvs": merge_vehicle_speed,
         "mva": merge_vehicle_acceleration,
     }
-    present = []  # list of (clipped_value, mu_key, sigma_key)
-    for name, (lo, hi), (mu_k, sg_k) in _OBS_FEATURES:
+    present = []  # list of (feature_index, clipped_value, mu_key, sigma_key)
+    for feat_idx, (name, (lo, hi), (mu_k, sg_k)) in enumerate(_OBS_FEATURES):
         v = raw[name]
         if v is None or np.isnan(v):
             continue
-        present.append((float(np.clip(v, lo, hi)), mu_k, sg_k))
+        present.append((feat_idx, float(np.clip(v, lo, hi)), mu_k, sg_k))
 
     n_modes = len(COURTESY_TYPES)
     if not present:
         return np.ones(n_modes, dtype=float) / n_modes
 
     log_scores = np.zeros(n_modes, dtype=float)
-    for i, mode in enumerate(COURTESY_TYPES):
-        m = _OBS_MODEL[mode]
-        log_scores[i] = sum(_gaussian_log_pdf(val, m[mu_k], m[sg_k]) for val, mu_k, sg_k in present)
+    if _BELIEF_MODEL == "full_cov":
+        feature_positions = [idx for idx, _, _, _ in present]
+        values = np.array([val for _, val, _, _ in present], dtype=float)
+        for i, mode in enumerate(COURTESY_TYPES):
+            payload = _FULL_COV_MODEL[mode]
+            mean = np.asarray(payload["mean"], dtype=float)[feature_positions]
+            cov = np.asarray(payload["cov"], dtype=float)[np.ix_(feature_positions, feature_positions)]
+            log_scores[i] = _full_cov_log_pdf(values, mean, cov)
+    else:
+        for i, mode in enumerate(COURTESY_TYPES):
+            m = _OBS_MODEL[mode]
+            log_scores[i] = sum(_gaussian_log_pdf(val, m[mu_k], m[sg_k]) for _, val, mu_k, sg_k in present)
     log_scores -= log_scores.max()  # shift for numerical stability before exp
     return np.maximum(np.exp(log_scores), 1e-6)
 
@@ -628,8 +746,8 @@ def run_episode(
                 merge_vehicle_acceleration=observed_merge_acceleration,
                 regularization=config.belief_regularization,
             )
-        action = choose_ego_action(
-            belief, observed_ttc, observed_front_gap, rng,
+        action = dataset_ego_action(
+            config.policy_name, belief, observed_ttc, observed_front_gap, rng,
             merge_speed=observed_merge_speed,
             ego_speed=ego_speed,
             relative_distance=relative_distance,

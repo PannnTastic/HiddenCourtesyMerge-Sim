@@ -1,7 +1,9 @@
 """
-Record one GIF per policy × courtesy combination (8 GIFs total).
+Record one GIF per policy × courtesy combination.
 
 Output: gifs/
+  pomcp_cooperative.gif
+  pomcp_non_cooperative.gif
   belief_cooperative.gif
   belief_non_cooperative.gif
   oracle_cooperative.gif
@@ -40,9 +42,10 @@ from generate_hidden_courtesy_merge_dataset import (
     select_merge_vehicle,
     update_belief as gen_update_belief,
 )
+from pomcp_policy import POMCPPolicy
 
 # ── Config ───────────────────────────────────────────────────────────
-POLICIES   = ["belief_policy", "oracle_policy", "rule_policy", "random_policy"]
+POLICIES   = ["pomcp_policy", "belief_policy", "oracle_policy", "rule_policy", "random_policy"]
 COURTESIES = ["cooperative", "non_cooperative"]
 
 SEED       = 42        # episode seed (same for all combos — matched)
@@ -51,6 +54,9 @@ FPS_GIF    = 6         # frames per second in output GIF
 SCALE      = 2         # upscale factor for sim frame (150×600 → 300×1200)
 HUD_H      = 110       # pixel height of HUD strip below sim frame
 OUT_DIR    = Path("gifs")
+POMCP_SIMS = 100
+POMCP_HORIZON = 10
+POMCP_SEED_OFFSET = 707
 
 # ── Colours (RGB for PIL) ────────────────────────────────────────────
 BG         = (20,  22,  32)
@@ -115,7 +121,7 @@ def _belief_for_policy(policy: str, belief: np.ndarray,
         b[list(COURTESY_TYPES).index(true_courtesy)] = 1.0
     elif policy == "rule_policy":
         b[:] = 0.5
-    # belief_policy: use as-is; random_policy: doesn't use belief
+    # belief_policy and pomcp_policy: use as-is; random_policy: doesn't use belief
     return b
 
 
@@ -189,7 +195,7 @@ def _compose_frame(
 
     # Row 1: policy | courtesy | step
     pol_short = policy.replace("_policy", "").upper()
-    pol_col   = {"BELIEF": BLUE, "ORACLE": COOP_COL,
+    pol_col   = {"POMCP": ORANGE, "BELIEF": BLUE, "ORACLE": COOP_COL,
                  "RULE": YELLOW, "RANDOM": GRAY}.get(pol_short, WHITE)
     c_col = COOP_COL if courtesy == "cooperative" else NC_COL
     c_lbl = "COOPERATIVE" if courtesy == "cooperative" else "NON-COOPERATIVE"
@@ -291,6 +297,14 @@ def run_episode(
     total_r    = 0.0
     win_step   = 0
     frames: list[Image.Image] = []
+    pomcp = None
+    if policy == "pomcp_policy":
+        pomcp = POMCPPolicy.build(
+            "observation_model.json",
+            n_simulations=POMCP_SIMS,
+            horizon=POMCP_HORIZON,
+        )
+        pomcp.reset(seed=SEED + POMCP_SEED_OFFSET)
 
     for step in range(60):
         ego = env.unwrapped.vehicle
@@ -315,6 +329,14 @@ def run_episode(
 
         if policy == "random_policy":
             action_idx = int(rng.integers(0, 5))
+        elif policy == "pomcp_policy":
+            assert pomcp is not None
+            action_idx = pomcp.plan(
+                rel_dist=rd,
+                ego_speed=espd,
+                merge_speed=mspd,
+                belief=belief.copy(),
+            )
         else:
             b_act = _belief_for_policy(policy, belief, courtesy)
             action_idx = choose_ego_action(b_act, ttc, fg, rng, mspd, espd, rd)
