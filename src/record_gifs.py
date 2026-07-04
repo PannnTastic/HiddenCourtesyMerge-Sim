@@ -232,7 +232,7 @@ def _compose_frame(
         (b_nc   > 0.5 and courtesy == "non_cooperative")
     )
     acc_col = COOP_COL if correct else NC_COL
-    acc_txt = "CORRECT ✓" if correct else "WRONG  ✗"
+    acc_txt = "CORRECT" if correct else "WRONG"
     try:
         bb = F_TITLE.getbbox(acc_txt)
         aw = bb[2] - bb[0]
